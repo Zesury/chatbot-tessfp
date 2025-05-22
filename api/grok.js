@@ -1,4 +1,5 @@
 import { put } from '@vercel/blob';
+import fetch from 'node-fetch';
 
 // Configuración de las APIs
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "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";
