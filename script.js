@@ -1180,16 +1180,22 @@ async function processUserQuery(query) {
         addBotMessage(response)
       }
     } else {
-      // PASO 2: Si no está relacionado con TESSFP, intentar con Grok
-      console.log("Intentando responder con Grok")
+      // PASO 2: Si no está relacionado con TESSFP, intentar con Grok o Groq
+      console.log("Intentando responder con IA")
       try {
-        const grokResponse = await fetchGrokResponse(query)
-        if (grokResponse) {
-          // Si Grok responde correctamente
-          console.log("Respuesta de Grok obtenida")
-          conversationHistory.push({ role: "assistant", content: grokResponse })
+        // Alternar entre Grok y Groq para balancear las consultas
+        const useModel = Math.random() > 0.5 ? 'grok' : 'groq';
+        const aiResponse = await fetchGrokResponse(query, useModel)
+        if (aiResponse) {
+          // Si la IA responde correctamente
+          console.log(`Respuesta de ${useModel} obtenida`)
+          conversationHistory.push({ 
+            role: "assistant", 
+            content: aiResponse.response,
+            savedAt: aiResponse.savedAt 
+          })
           removeLoadingIndicator()
-          addBotMessage(grokResponse)
+          addBotMessage(aiResponse.response)
           return
         }
       } catch (grokError) {
@@ -1302,11 +1308,11 @@ function detectCasualIntent(query) {
 // Modificar la función fetchGrokResponse para manejar mejor los errores y respuestas
 
 // Reemplazar la función fetchGrokResponse con esta versión mejorada:
-async function fetchGrokResponse(query) {
+async function fetchGrokResponse(query, useModel = 'grok') {
   try {
-    console.log("Solicitando respuesta a Grok para:", query)
+    console.log(`Solicitando respuesta a ${useModel} para:`, query)
 
-    // Construir la URL para la API de Grok
+    // Construir la URL para la API
     const apiUrl = "/api/grok"
 
     // Realizar la solicitud a la API
@@ -1317,6 +1323,7 @@ async function fetchGrokResponse(query) {
       },
       body: JSON.stringify({
         query: query,
+        useModel: useModel,
         system:
           "Eres un asistente virtual amigable y conversacional para el Tecnológico de Estudios Superiores de San Felipe del Progreso (TESSFP). Responde de manera natural, amigable y conversacional en español. Cuando no sepas algo específico sobre el TESSFP, responde de forma general pero útil. Mantén tus respuestas concisas pero informativas. No inventes información específica sobre el TESSFP.",
       }),
@@ -1424,7 +1431,7 @@ function updateSuggestions() {
       ? commonQuestions
       : [
           "¿Cuáles son las opciones de titulación?",
-          "¿Qué carreras ofrece el TESSFP?",
+          "¿Qué carreras ofrece?",
           "¿Cómo solicito una constancia?",
           "¿Qué hago para cambiar de carrera?",
           "¿Cuándo inician las inscripciones?",

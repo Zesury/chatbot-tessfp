@@ -1,73 +1,114 @@
-// Archivo: api/grok.js
-// Este archivo maneja las solicitudes a la API de Grok
-import fetch from 'node-fetch';
+import { put } from '@vercel/blob';
 
-// Función para manejar solicitudes POST
+// Configuración de las APIs
+const GROQ_API_KEY = "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";
+const XAI_API_KEY = "xai-38kYctXtEJwrJ54b69WgnsbbiASNk45N1LXg5k2zAcCADbR6xSGzGqoxmGbvUNPsN4Lgzn2H71JLAobU";
+const BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_L82hdoDFYNj7XW4o_sxw6YvKhMJ7j7ELRD7oKB8HB8fhzXj";
+
 export default async function handler(req, res) {
-  // Verificar que sea una solicitud POST
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método no permitido" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método no permitido' });
   }
 
   try {
-    // Extraer la consulta y el contexto del sistema del cuerpo de la solicitud
-    const { query, conversationHistory } = req.body;
-    if (!query) {      return res.status(400).json({ error: "La consulta es requerida" });
+    const { query, system, useModel = 'grok' } = req.body;
+
+    if (!query) {
+      return res.status(400).json({ error: 'La consulta es requerida' });
     }
 
-    const apiKey = "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";
-
+    let response;
+    
     try {
-      // Llamar directamente a la API de Groq
-      const grokResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: "mixtral-8x7b-32768",
-          messages: [
-            {
-              role: "system",
-              content: "Eres un asistente virtual del TESSFP. Responde de forma breve y concisa."
-            },
-            ...(conversationHistory || []).slice(-5),
-            {
-              role: "user",
-              content: query
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 150
-        })
-      });
-
-      if (!grokResponse.ok) {
-        throw new Error(`Error de Groq API: ${grokResponse.status}`);
+      if (useModel === 'groq') {
+        const grokResponse = await fetch("https://api.groq.com/v1/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "deepseek-r1-distill-llama-70b",
+            prompt: query,
+            max_tokens: 1000
+          })
+        });
+        
+        if (!grokResponse.ok) {
+          throw new Error(`Error from Groq API: ${grokResponse.status}`);
+        }
+        
+        const data = await grokResponse.json();
+        response = data.choices[0].text;
+      } else {
+        const xaiResponse = await fetch("https://api.x.ai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${XAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "grok-2-1212",
+            messages: [
+              {
+                role: "system",
+                content: system || "Eres un asistente virtual del TESSFP. Responde de forma clara y concisa."
+              },
+              {
+                role: "user",
+                content: query
+              }
+            ]
+          })
+        });
+        
+        if (!xaiResponse.ok) {
+          throw new Error(`Error from XAI API: ${xaiResponse.status}`);
+        }
+        
+        const data = await xaiResponse.json();
+        response = data.choices[0].message.content;
       }
 
-      const data = await grokResponse.json();
-
-      if (!data.choices?.[0]?.message?.content) {
-        throw new Error("Respuesta inválida de Groq");
+      // Guardar la conversación en Blob storage
+      try {
+        const conversation = {
+          timestamp: new Date().toISOString(),
+          query,
+          response,
+          model: useModel
+        };
+        
+        const { url } = await put(
+          `conversations/${Date.now()}.json`,
+          JSON.stringify(conversation),
+          { 
+            access: 'public',
+            token: BLOB_READ_WRITE_TOKEN
+          }
+        );
+        
+        return res.status(200).json({
+          response: response,
+          savedAt: url
+        });
+      } catch (blobError) {
+        console.error('Error al guardar en Blob:', blobError);
+        // Si falla el guardado en Blob, enviamos solo la respuesta
+        return res.status(200).json({ response });
       }
-
-      return res.status(200).json({
-        response: data.choices[0].message.content
-      });
-
-    } catch (error) {
-      console.error("Error con Groq:", error);
-      return res.status(200).json({ 
-        response: "Lo siento, estoy teniendo problemas técnicos. ¿Podrías intentar nuevamente?",
-        error: true
+    } catch (aiError) {
+      console.error('Error al procesar la IA:', aiError);
+      return res.status(500).json({
+        error: 'Error al procesar la respuesta de IA',
+        details: aiError.message
       });
     }
   } catch (error) {
-    console.error("Error general:", error);
-    return res.status(500).json({ 
-      error: "Error interno del servidor"
+    console.error('Error general:', error);
+    return res.status(500).json({
+      error: 'Error interno del servidor',
+      details: error.message
     });
   }
 }
