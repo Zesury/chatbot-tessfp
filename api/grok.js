@@ -1,9 +1,9 @@
 import { put } from '@vercel/blob';
 
 // Configuración de las APIs
-const GROQ_API_KEY = "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";
-const XAI_API_KEY = "xai-38kYctXtEJwrJ54b69WgnsbbiASNk45N1LXg5k2zAcCADbR6xSGzGqoxmGbvUNPsN4Lgzn2H71JLAobU";
-const BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_L82hdoDFYNj7XW4o_sxw6YvKhMJ7j7ELRD7oKB8HB8fhzXj";
+const GROQ_API_KEY = process.env.GROQ_API_KEY || "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";
+const XAI_API_KEY = process.env.XAI_API_KEY || "xai-38kYctXtEJwrJ54b69WgnsbbiASNk45N1LXg5k2zAcCADbR6xSGzGqoxmGbvUNPsN4Lgzn2H71JLAobU";
+const BLOB_READ_WRITE_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || "vercel_blob_rw_L82hdoDFYNj7XW4o_sxw6YvKhMJ7j7ELRD7oKB8HB8fhzXj";
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

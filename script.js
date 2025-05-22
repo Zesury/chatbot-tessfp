@@ -1313,7 +1313,7 @@ async function fetchGrokResponse(query, useModel = 'grok') {
     console.log(`Solicitando respuesta a ${useModel} para:`, query)
 
     // Construir la URL para la API
-    const apiUrl = "/api/grok"
+    const apiUrl = window.location.origin + "/api/grok"
 
     // Realizar la solicitud a la API
     const response = await fetch(apiUrl, {
