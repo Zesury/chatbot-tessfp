@@ -1,0 +1,16 @@
+{
+  "name": "chatbot-tessfp",
+  "version": "1.0.0",
+  "description": "Chatbot interactivo para el Tecnológico de Estudios Superiores de San Felipe del Progreso",
+  "private": true,
+  "scripts": {
+    "start": "vercel dev",
+    "deploy": "vercel deploy --prod"
+  },
+  "dependencies": {
+    "@vercel/node": "^2.15.10"
+  },
+  "devDependencies": {
+    "vercel": "^32.5.0"
+  }
+}
