@@ -5,7 +5,25 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY || "gsk_Zlk9liMBywiTT1RECNamWGdyb3
 const XAI_API_KEY = process.env.XAI_API_KEY || "xai-38kYctXtEJwrJ54b69WgnsbbiASNk45N1LXg5k2zAcCADbR6xSGzGqoxmGbvUNPsN4Lgzn2H71JLAobU";
 const BLOB_READ_WRITE_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || "vercel_blob_rw_L82hdoDFYNj7XW4o_sxw6YvKhMJ7j7ELRD7oKB8HB8fhzXj";
 
+// Habilitar CORS
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+};
+
 export default async function handler(req, res) {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200, corsHeaders);
+    return res.end();
+  }
+
+  // Add CORS headers to all responses
+  Object.keys(corsHeaders).forEach(key => {
+    res.setHeader(key, corsHeaders[key]);
+  });
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
