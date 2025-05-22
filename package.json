@@ -8,9 +8,8 @@
     "deploy": "vercel deploy --prod"
   },
   "dependencies": {
-    "@vercel/node": "^2.15.10",
     "@vercel/blob": "^0.22.0",
-    "node-fetch": "^3.3.2"
+    "@vercel/node": "^2.15.10"
   },
   "devDependencies": {
     "vercel": "^32.5.0"
